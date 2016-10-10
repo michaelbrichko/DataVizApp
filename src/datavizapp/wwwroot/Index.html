@@ -1,0 +1,381 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+        <meta name="description" content="">
+        <meta name="author" content="">
+        <!--<link rel="icon" href="../../favicon.ico">-->
+
+        <title>Item Tracker</title>
+
+        <!-- Bootstrap core CSS -->
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+
+        <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
+        <!--<link href="../../assets/css/ie10-viewport-bug-workaround.css" rel="stylesheet">-->
+        <link href="http://getbootstrap.com/assets/css/ie10-viewport-bug-workaround.css" rel="stylesheet" />
+
+        <!-- Custom styles for this template -->
+        <!--<link href="sticky-footer-navbar.css" rel="stylesheet">-->
+        <link href="http://getbootstrap.com/examples/sticky-footer-navbar/sticky-footer-navbar.css" rel="stylesheet" />
+
+        <!-- Just for debugging purposes. Don't actually copy these 2 lines! -->
+        <!--[if lt IE 9]><script src="../../assets/js/ie8-responsive-file-warning.js"></script><![endif]-->
+        <!--<script src="../../assets/js/ie-emulation-modes-warning.js"></script>-->
+
+        <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+        <!--[if lt IE 9]>
+            <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
+            <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+        <![endif]-->
+    </head>
+
+    <body>
+
+        <!-- Fixed navbar -->
+        <nav class="navbar navbar-default navbar-fixed-top">
+            <div class="container">
+                <div class="navbar-header">
+                    <a id="homeButton" href="#" class="navbar-brand">Item Tracker</a>
+                </div>
+                <div id="navbar" class="navbar-collapse collapse">
+                    <ul class="nav navbar-nav navbar-right">
+                        <li class="dropdown">
+                            <a href="#" id="currentEnvironment" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">OSG_PROD_S1_MainV2<span class="caret"></span></a>
+                            <ul class="dropdown-menu">
+                                <li class="dropdown-header">Environments</li>
+                                <li><a id="environment1" href="#">OSG_PROD_S1_MainV2</a></li>
+                                <li><a id="environment2" href="#">OSG_PROD_S2_MainV2</a></li>
+                            </ul>
+                        </li>
+                        <!--<li><a href="../navbar/">Default</a></li>
+                            <li class="active"><a href="./">Static top <span class="sr-only">(current)</span></a></li>-->
+                        <li><a id ="configurationButton" href="#">Configuration</a></li>
+                    </ul>
+                </div><!--/.nav-collapse -->     
+            </div>
+        </nav>
+
+        <!-- Begin page content -->
+        <div class="container">
+            <div class="page-header">
+                <h1>Search Items in Offline Cooking Pipeline</h1>
+            </div>
+            <div class="form-group" id="searchForm" style="width: 30%;">
+                <p class="lead">
+                    <input type="text" class="form-control" id="itemId" placeholder="BigID or RecoItemId">
+                    <label class="control-label" id="badInput" for="itemId" style="font-size: 50%">Bad input. Please insert BigId (For example '9WZDNCRDF1K9') or RecoItemId (For example '02611dd3-da00-0002-1bde-53a4b77c97c0')</label>
+                    <p><button type="button" id="searchButton" data-complete-text="Searching ..." class="btn btn-info" autocomplete="off">Search</button></p>
+                </p>
+            </div>
+            <div id="configuration">
+                <label for="configurationText">Current Configuration:</label>
+                <textarea id="configurationText" class="form-control" rows="25" style="background-color: #f5f5f5;"></textarea>
+                <p class="lead"><p><button type="button" id="updateConfigurationButton" data-complete-text="Updating configuration" class="btn btn-default" autocomplete="off">Update Configuration</button></p></p>
+            </div>
+            <div id="errorsBar" class="alert alert-danger" role="alert"></div>
+            <div id="accordion" class="panel-group" role="tablist" aria-multiselectable="true"></div>
+        </div>
+    
+        <!-- Page Footer -->
+        <footer class="footer">
+            <div class="container">
+                <p class="text-muted">Reco Lifecycle team.</p>
+            </div>
+        </footer>
+
+        <!-- Bootstrap core JavaScript
+            ================================================== -->
+        <!-- Placed at the end of the document so the pages load faster -->
+        <!--<script src="http://ajax.aspnetcdn.com/ajax/jQuery/jquery-2.0.3.min.js"></script>-->
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+        <script>window.jQuery || document.write('<script src="../../assets/js/vendor/jquery.min.js"><\/script>')</script>
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+        <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
+        <!--<script src="../../assets/js/ie10-viewport-bug-workaround.js"></script>-->
+        <script src="http://getbootstrap.com/assets/js/ie10-viewport-bug-workaround.js"></script>
+        <script>
+
+            $(document).ready(function () {
+
+                ResetState();
+
+                AddElementsActions();
+            });
+
+            // Functions
+
+            function GetUri() {
+                var uri = 'api/items/';
+
+                var itemId = GetInputValue();
+
+                if (itemId.length == 12) {
+                    uri += 'DataByBigId?bigId=' + itemId;
+                }
+                    // Input is RecoItemId
+                else if (itemId.length == 36) {
+                    uri += 'DataByRecoItemId?recoItemId=' + itemId;
+                }
+
+                return uri;
+            }
+
+            function ProcessData(data) {
+
+                // In case server returned empty data
+                if (data.length == 0) {
+                    ShowErrorsBar('There is no data for the searched item.');
+                    return;
+                }
+
+                var dataElement = '';
+
+                for (var categoryIndex in data) {
+                    dataElement += GetCategoryPanel(data[categoryIndex], categoryIndex);
+                }
+
+                ShowSearchResult(dataElement);
+            }
+
+            function GetData(uri) {
+                $.getJSON(uri)
+                    .done(function (data) {
+                        ProcessData(data);
+                        EnableSearch();
+                    })
+                    .fail(function (jqXhr, textStatus, err) {
+                        ShowErrorsBar('Web Service is not responding. Please contact kststai@microsoft.com.' + err);
+                        EnableSearch();
+                    });
+            }
+
+            function AddElementsActions()
+            {
+                // Input field click action
+                $('#itemId').on('click', function () {
+                    HideErrorsBar();
+                    HideWrongInputMessage();
+                });
+
+                // Search button click action
+                $('#searchButton').on('click', function () {
+
+                    ResetState();
+
+                    if (!IsInputValid()) {
+                        ShowWrongInputMessage();
+                        return;
+                    }
+
+                    DisableSearch();
+
+                    var uri = GetUri();
+
+                    // Retrieves data from the server asynchronously
+                    GetData(uri);
+                });
+
+                $('#configurationButton').on('click', function () {
+                    HideErrorsBar();
+                    HideSearchMenu();
+                    ShowConfiguration();
+                });
+
+                $('#homeButton').on('click', function () {
+                    ShowSearchMenu();
+                    HideConfiguration();
+                });
+
+                $('#environment1').on('click', function () {
+                    $('#currentEnvironment').empty();
+                    $('#currentEnvironment').append($('#environment1').text() + '<span class="caret"></span>');
+                });
+
+                $('#environment2').on('click', function () {
+                    $('#currentEnvironment').empty();
+                    $('#currentEnvironment').append($('#environment2').text() + '<span class="caret"></span>');
+                });
+            }
+
+            function GetInputValue() {
+                return $('#itemId').val();
+            }
+
+            function IsInputValid() {
+
+                var input = GetInputValue();
+
+                if (input.length == 12 || input.length == 36) {
+                    return true;
+                }
+                else {
+                    return false;
+                }
+            }
+
+            // UI Functions
+
+            function ResetState() {
+
+                HideErrorsBar();
+                HideWrongInputMessage();
+                HideSearchResult();
+                HideConfiguration();
+            }
+
+            function EnableSearch() {
+                $("#searchButton").button('reset'); // reset
+                $("#searchButton").prop('disabled', false); // show search button
+                $("#itemId").prop('disabled', false); // show input text
+            }
+
+            function DisableSearch() {
+
+                // Block further searchs until current request is processed
+                $("#searchButton").prop('disabled', true);
+
+                // Block further inputs until current request is processed
+                $("#itemId").prop('disabled', true);
+
+                // Change search button state to 'Searching...'
+                $("#searchButton").button('complete');
+            }
+
+            function ShowSearchMenu() {
+                $("#searchForm").toggleClass('hide', false);
+            }
+
+            function HideSearchMenu() {
+                $("#searchForm").toggleClass('hide', true);
+            }
+
+            function ShowWrongInputMessage() {
+
+                // paint frame in red
+                $('#searchForm').removeClass('form-group').addClass('form-group has-error');
+
+                // Show error
+                $("#badInput").toggleClass('hide', false);
+            }
+
+            function HideWrongInputMessage() {
+
+                // paint frame in blue
+                $('#searchForm').removeClass().addClass('form-group');
+
+                $("#badInput").toggleClass('hide', true);
+            }
+
+            function ShowErrorsBar(error) {
+                $("#errorsBar").append(error);
+                $("#errorsBar").toggleClass('hide', false);
+            }
+
+            function HideErrorsBar() {
+                $("#errorsBar").empty();
+                $("#errorsBar").toggleClass('hide', true);
+            }
+
+            function ShowSearchResult(dataElement) {
+                $("#accordion").append(dataElement);
+                $("#accordion").toggleClass('hide', false);
+            }
+
+            function HideSearchResult() {
+                $("#accordion").empty();
+                $("#accordion").toggleClass('hide', true);
+            }
+
+            function ShowConfiguration() {
+
+                var conf = [{"Some random data":"Mirrors","DataSets":[{"Name":"XB1Ratings","Metadata":["type:Apps, Market:, RatingAverage:3.9","type:Apps, Market:, RatingAverage:4","type:Apps, Market:, RatingAverage:3.8","type:Apps, Market:AT, RatingAverage:5","type:Apps, Market:AT, RatingAverage:5","type:Apps, Market:AU, RatingAverage:5","type:Apps, Market:AU, RatingAverage:5","type:Apps, Market:CA, RatingAverage:4","type:Apps, Market:CA, RatingAverage:4","type:Apps, Market:DE, RatingAverage:5"]}]}];
+                $("#configurationText").empty();
+                $("#configurationText").append(JSON.stringify(conf, null, 4));
+                $("#configuration").toggleClass('hide', false);
+            }
+
+            function HideConfiguration() {
+                $("#configurationText").empty();
+                $("#configuration").toggleClass('hide', true);
+            }
+
+            function GetCategoryPanel(category, id) {                   
+                return '<div class="panel panel-default">' +
+                    '   <div class="panel-heading" role="tab" id="heading' + id + '">' +
+                    '       <h4 class="panel-title">' +
+                    '           <a class="collapsed" role="button" data-toggle="collapse" data-parent="#accordion" href="#collapse' + id + '" aria-expanded="false" aria-controls="collapse' + id + '">' + category.Name + '</a>' +
+                    '       </h4>' +
+                    '    </div>' +
+                    '    <div id="collapse' + id + '" class="panel-collapse collapse" role="tabpanel" aria-labelledby="heading' + id + '">' +
+                    '       <div class="panel-body">' + GetCategoryPlot(category.DataSets) + '</div>' +
+                    '    </div >' +
+                    '</div>';
+            }
+
+            function GetDataSetsPerRowCount() {
+                return 4;
+            }
+
+            function GetCategoryPlot(dataSets) {
+
+                var categoryPlot = '';
+
+                var rowsCount = Math.ceil(dataSets.length / GetDataSetsPerRowCount());
+
+                var dataSetStartIndexInRow = 0;
+                for (var row = 0; row < rowsCount; row++) {
+                    categoryPlot += GetRowInPlot(dataSetStartIndexInRow, dataSets);
+                    dataSetStartIndexInRow += GetDataSetsPerRowCount();
+                }
+
+                return categoryPlot;
+            }
+
+            function GetRowInPlot(dataSetStartIndex, dataSets) {
+                return '<div style="padding: 15px">' + // the padding is used for a space between rows
+                    '   <div class="row">' + GetDataSetsInRow(dataSetStartIndex, dataSets) + '</div>' +
+                    '</div>';
+            }
+
+            function GetDataSetsInRow(dataSetStartIndex, dataSets) {
+                var rowData = '';
+
+                for (var i = dataSetStartIndex; i < Math.min(dataSetStartIndex + GetDataSetsPerRowCount(), dataSets.length); i++) {
+                    rowData += GetDataSetPanel(dataSets[i]);
+                }
+
+                return rowData;
+            }
+
+            function GetDataSetPanel(dataSet) {
+                return '<div class="col-xs-6 col-md-3">' +
+                    '    <div class="panel panel-info">' +
+                    '        <div class="panel-heading">' +
+                    '            <h3 class="panel-title">' + dataSet.Name + '</h3>' +
+                    '        </div>' +
+                    '        <div class="panel-body">' + GetDataSetMetadataItems(dataSet.Metadata) + '</div>' +
+                    '    </div>' +
+                    '</div>';
+            }
+
+            function GetDataSetMetadataItems(metadataArr) {
+                var metadataItems = '';
+
+                for (var metadaIndex in metadataArr) {
+                    metadataItems += GetMetadataItem(metadataArr[metadaIndex]);
+                }
+
+                return metadataItems;
+            }
+
+            function GetMetadataItem(metadata) {
+                return '<li class="list-group-item">' + metadata + '</li>';
+            }
+
+        </script>
+    </body>
+</html>
