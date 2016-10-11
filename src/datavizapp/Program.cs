@@ -10,6 +10,8 @@ namespace datavizapp
 {
     public class Program
     {
+        build break
+
         public static void Main(string[] args)
         {
             var host = new WebHostBuilder()
