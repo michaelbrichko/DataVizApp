@@ -13,7 +13,7 @@ namespace datavizapp.Controllers
         [HttpGet]
         public IEnumerable<string> Get()
         {
-            return new string[] { "value1", "value3" };
+            return new string[] { "value3", "value5" };
         }
 
         // GET api/values/5
