@@ -32,7 +32,6 @@ namespace datavizapp.Data
 
         // Binary flag indicating if the visitor sent a booking request during the session
         public bool SentBookingRequest { get; set; }
-
     }
 }
 
